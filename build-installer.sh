@@ -64,6 +64,12 @@ mkdir $SCRIPTS
 cp osx-patch-ccid $SCRIPTS/preinstall
 cp Info.plist $SCRIPTS/
 cp $BUILD$BUNDLE_DIR/Contents/MacOS/libccid.dylib $SCRIPTS/
-pkgbuild --identifier com.yubico.libccid --nopayload --scripts "$SCRIPTS" $OUTPUT/ifd-yubico.pkg
+pkgbuild --identifier com.yubico.libccid --nopayload --scripts "$SCRIPTS" $BUILD/ifd-yubico.pkg
+
+# Require reboot after installation
+pkgutil --expand "$BUILD/ifd-yubico.pkg" "$BUILD/ifd-yubico-expanded"
+sed -e 's/postinstall-action=\"none\"/postinstall-action=\"restart\"/' -i '' "$BUILD/ifd-yubico-expanded/PackageInfo"
+pkgutil --flatten "$BUILD/ifd-yubico-expanded" "$OUTPUT/ifd-yubico.pkg"
 
 echo "SUCCESS"
+echo "Resulting installer is in $OUTPUT"
