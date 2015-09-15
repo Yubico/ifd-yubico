@@ -25,7 +25,7 @@ following dependencies into the root directory of the repository, then run
 ./build-installer.sh. The resulting installer, ifd-yubico.pkg, will be created
 in the output directory.
 
-NOTE: You will need OS X 10.11 to build the installer!
+NOTE: You will need OS X 10.11 to build the installer.
 
 === Build dependencies
 To build the installer you will need the source code for libusb 1.0.9 as well
@@ -34,3 +34,4 @@ as libccid 1.4.20. These are available from the following pages:
  http://www.libusb.org/
  https://alioth.debian.org/frs/?group_id=30105#title_ccid
 
+You also need pkg-config, which can be installed using for example Homebrew.
