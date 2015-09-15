@@ -1,0 +1,36 @@
+== Yubico OS X libccid patcher
+This repository contains scripts for building an installer for OSX that ensures
+your system can detect and use CCID enabled YubiKeys. The way this is done
+differs depending on what version of OS X you are running. Regardless of
+version, you will most likely need to reboot the system after running the
+installer for the system to pick up the changes.
+
+=== OS X 10.10 and earlier
+OS X ships with libccid, which supports all CCID enabled YubiKey devices.
+However, it contains a whitelist of compatible devices, and the list that ships
+with the OS is missing several entries that are needed for YubiKeys to be
+detected. On these systems the ifd-yubico installer will patch the existing
+list and add all needed entries.
+
+=== OS X 10.11 (and later)
+Due to the new "rootless" security feature of 10.11, it is no longer possible
+to patch the existing libccid device list. Instead, the installer will install
+a custom built version of libccid in parallel to the original one, with it's
+own device list comtaining all YubiKey devices.
+
+== Building the installer
+If you're just looking for an installer to use, just download a pre-built one
+from the releases page. If you want to build it yourself, first download the
+following dependencies into the root directory of the repository, then run
+./build-installer.sh. The resulting installer, ifd-yubico.pkg, will be created
+in the output directory.
+
+NOTE: You will need OS X 10.11 to build the installer!
+
+=== Build dependencies
+To build the installer you will need the source code for libusb 1.0.9 as well
+as libccid 1.4.20. These are available from the following pages:
+
+ http://www.libusb.org/
+ https://alioth.debian.org/frs/?group_id=30105#title_ccid
+

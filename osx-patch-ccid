@@ -1,0 +1,124 @@
+#!/usr/bin/python
+
+import re
+import subprocess
+import platform
+import os
+import shutil
+import errno
+
+DEVICES = [
+    ('0x1050', '0x0111', 'Yubico Yubikey NEO OTP+CCID'),
+    ('0x1050', '0x0112', 'Yubico Yubikey NEO CCID'),
+    ('0x1050', '0x0115', 'Yubico Yubikey NEO U2F+CCID'),
+    ('0x1050', '0x0116', 'Yubico Yubikey NEO OTP+U2F+CCID'),
+    ('0x1050', '0x0404', 'Yubico Yubikey 4 CCID'),
+    ('0x1050', '0x0405', 'Yubico Yubikey 4 OTP+CCID'),
+    ('0x1050', '0x0406', 'Yubico Yubikey 4 U2F+CCID'),
+    ('0x1050', '0x0407', 'Yubico Yubikey 4 OTP+U2F+CCID')
+]
+
+OSX_VER = tuple(int(d) for d in platform.mac_ver()[0].split('.'))
+
+PREFIX = "/usr"
+LOCAL = "/usr/local"
+BUNDLE = "%s/libexec/SmartCardServices/drivers/ifd-ccid.bundle"
+BUNDLE_YUBICO = "%s/libexec/SmartCardServices/drivers/ifd-yubico.bundle"
+INFO_PLIST = "%s/Contents/Info.plist" % BUNDLE % PREFIX
+INFO_PLIST_LOCAL = "%s/Contents/Info.plist" % BUNDLE % LOCAL
+INFO_PLIST_YUBICO = "%s/Contents/Info.plist" % BUNDLE_YUBICO % LOCAL
+LIBCCID = "%s/Contents/MacOS/libccid.dylib" % BUNDLE_YUBICO % LOCAL
+
+
+def install_libccid():
+    if os.path.isfile(LIBCCID):
+        print "yubico libccid found, do nothing..."
+        return
+    path = os.path.dirname(LIBCCID)
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            print "Error creating directory:", e
+    shutil.copyfile(os.path.basename(LIBCCID), LIBCCID)
+    shutil.copyfile(os.path.basename(INFO_PLIST), INFO_PLIST_YUBICO)
+    print "yubico libccid installed to %s" % BUNDLE % LOCAL
+
+
+def add_device(dev, content):
+    # Parsing XML with regexes, what a wonderful idea!
+    names = re.search('<key>ifdFriendlyName</key>\s*<array>(.*?)</array>', content, re.DOTALL)
+
+    if names.group(1).find('<string>%s</string>' % dev[2]) > 0:
+        print "%s already present, skipping..." % dev[2]
+        # Already added
+        return content
+
+    print "Adding:", dev[2]
+    pos = names.start(1)
+    content = content[:pos] + '\n\t\t<string>%s</string>' % dev[2] + content[pos:]
+
+    vids = re.search('<key>ifdVendorID</key>\s*<array>(.*?)</array>', content, re.DOTALL)
+    pos = vids.start(1)
+    content = content[:pos] + '\n\t\t<string>%s</string>' % dev[0] + content[pos:]
+
+    pids = re.search('<key>ifdProductID</key>\s*<array>(.*?)</array>', content, re.DOTALL)
+    pos = pids.start(1)
+    content = content[:pos] + '\n\t\t<string>%s</string>' % dev[1] + content[pos:]
+
+    return content
+
+
+def restart_pcscd():
+    pids = subprocess.check_output("ps ax | grep pcscd | grep -v grep | awk '{ print $1 }'",
+                                  shell=True).strip()
+    if pids:
+        print "Killing PCSCD..."
+        for pid in pids.split():
+            subprocess.call(['kill', '-9', pid])
+
+
+def main():
+    print "Checking file:", INFO_PLIST
+    try:
+        with open(INFO_PLIST, 'r') as f:
+            content = f.read()
+
+        patched = content
+        for dev in DEVICES:
+            patched = add_device(dev, patched)
+
+        if content != patched:
+            # Missing devices.
+            if OSX_VER < (10, 11):  # Patch in-place
+                print "Patching file:", INFO_PLIST
+                with open(INFO_PLIST, 'w') as f:
+                    f.write(patched)
+            else: # Check for custom installation
+                if os.path.isfile(INFO_PLIST_LOCAL):
+                    print "Checking file:", INFO_PLIST_LOCAL
+                    with open(INFO_PLIST_LOCAL, 'r') as f:
+                        content = f.read()
+                    patched = content
+                    for dev in DEVICES:
+                        patched = add_device(dev, patched)
+                    if patched == content:
+                        print "No patching needed."
+                        return
+                print "Installing custom libccid..."
+                install_libccid()
+        else:
+            print "No patching needed."
+            return
+
+        restart_pcscd()
+
+        print "Patching complete!"
+    except IOError as e:
+        print "Error patching file:", e
+
+
+if __name__ == '__main__':
+    main()
