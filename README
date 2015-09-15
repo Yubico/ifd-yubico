@@ -16,7 +16,7 @@ list and add all needed entries.
 Due to the new "rootless" security feature of 10.11, it is no longer possible
 to patch the existing libccid device list. Instead, the installer will install
 a custom built version of libccid in parallel to the original one, with it's
-own device list comtaining all YubiKey devices.
+own device list containing all YubiKey devices.
 
 == Building the installer
 If you're just looking for an installer to use, just download a pre-built one
