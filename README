@@ -4,7 +4,7 @@ your system can detect and use CCID enabled YubiKeys. The way this is done
 differs depending on what version of OS X you are running. If you're just
 looking for the actuall installer to run, you can find it here:
 
-https://github.com/Yubico/ifd-yubico/releases/download/ifd-yubico-1.0.0/ifd-yubico.pkg[ifd-yubico.pkg]
+Download the installer: https://github.com/Yubico/ifd-yubico/releases/download/ifd-yubico-1.0.0/ifd-yubico.pkg[ifd-yubico.pkg]
 
 === OS X 10.10 and earlier
 OS X ships with libccid, which supports all CCID enabled YubiKey devices.
@@ -33,6 +33,7 @@ To build the installer you will need the source code for libusb 1.0.9 as well
 as libccid 1.4.20. These are available from the following pages:
 
 http://www.libusb.org/
+
 https://alioth.debian.org/frs/?group_id=30105#title_ccid
 
 You also need pkg-config, which can be installed using for example Homebrew.
